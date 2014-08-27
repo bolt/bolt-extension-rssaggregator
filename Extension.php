@@ -10,7 +10,7 @@ namespace Bolt\Extension\Bolt\RSSAggregator;
  */
 class Extension extends \Bolt\BaseExtension
 {
-    const NAME = 'rssggregator';
+    const NAME = 'RSSAggregator';
 
     public function getName()
     {
