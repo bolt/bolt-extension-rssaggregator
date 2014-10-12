@@ -22,7 +22,7 @@
 			"init.php"
 		],
 		"psr-4" : {
-			"Bolt\\Extension\\Bolt\\RSSFeed\\" : ""
+			"Bolt\\Extension\\Bolt\\RSSAggregator\\" : ""
 		}
 	}
 }
