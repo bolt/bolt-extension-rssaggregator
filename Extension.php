@@ -40,7 +40,7 @@ class Extension extends \Bolt\BaseExtension
     public function twigRssAggregator($url = false, $options = array())
     {
 
-        if(!$url) {
+        if (!$url) {
             return new \Twig_Markup('External feed could not be loaded! No URL specified.', 'UTF-8');
         }
 
@@ -59,19 +59,19 @@ class Extension extends \Bolt\BaseExtension
 
         // Handle options parameter
 
-        if(!array_key_exists('limit', $options)) {
+        if (!array_key_exists('limit', $options)) {
             $options['limit'] = $defaultLimit;
         }
-        if(!array_key_exists('showDesc', $options)) {
+        if (!array_key_exists('showDesc', $options)) {
             $options['showDesc'] = $defaultShowDesc;
         }
-        if(!array_key_exists('showDate', $options)) {
+        if (!array_key_exists('showDate', $options)) {
             $options['showDate'] = $defaultShowDate;
         }
-        if(!array_key_exists('descCutoff', $options)) {
+        if (!array_key_exists('descCutoff', $options)) {
             $options['descCutoff'] = $defaultDescCutoff;
         }
-        if(!array_key_exists('cacheMaxAge', $options)) {
+        if (!array_key_exists('cacheMaxAge', $options)) {
             $options['cacheMaxAge'] = $defaultCacheMaxAge;
         }
 
@@ -79,7 +79,6 @@ class Extension extends \Bolt\BaseExtension
         if (!file_exists($cachedir)) {
             mkdir($cachedir, 0777, true);
         }
-
 
         // Use cache file if possible
         if (file_exists($cachefile)) {
@@ -109,7 +108,7 @@ class Extension extends \Bolt\BaseExtension
         // Parse document
         $feed = array();
 
-        foreach($doc->getElementsByTagName('item') as $node) {
+        foreach ($doc->getElementsByTagName('item') as $node) {
             $item = array(
                 'title' => $node->getElementsByTagName('title')->item(0)->nodeValue,
                 'desc' => $node->getElementsByTagName('description')->item(0)->nodeValue,
@@ -124,22 +123,22 @@ class Extension extends \Bolt\BaseExtension
         // if limit is set higher than the actual amount of items in the feed, adjust limit
         $limit = $options['limit'] > count($feed) ? count($feed) : $options['limit'];
 
-        for($i = 0; $i < $limit; $i++) {
-                $title = htmlentities(strip_tags($feed[$i]['title']), ENT_QUOTES, "UTF-8");
-                $link = htmlentities(strip_tags($feed[$i]['link']), ENT_QUOTES, "UTF-8");
-                $desc = htmlentities(strip_tags($feed[$i]['desc']), ENT_QUOTES, "UTF-8");
-                // if cutOff is set higher than the actual length of the description, adjust it
-                $cutOff = $options['descCutoff'] > strlen($desc) ? strlen($desc) : $options['descCutoff'];
-                $desc = substr($desc, 0, strpos($desc, ' ', $cutOff));
-                $desc = str_replace('&amp;nbsp;', '', $desc);
-                $desc .= '...';
-                $date = date('l F d, Y', strtotime($feed[$i]['date']));
-                array_push($items, array(
-                    'title' => $title,
-                    'link'  => $link,
-                    'desc'  => $desc,
-                    'date'  => $date,
-                ));
+        for ($i = 0; $i < $limit; $i++) {
+            $title = htmlentities(strip_tags($feed[$i]['title']), ENT_QUOTES, "UTF-8");
+            $link = htmlentities(strip_tags($feed[$i]['link']), ENT_QUOTES, "UTF-8");
+            $desc = htmlentities(strip_tags($feed[$i]['desc']), ENT_QUOTES, "UTF-8");
+            // if cutOff is set higher than the actual length of the description, adjust it
+            $cutOff = $options['descCutoff'] > strlen($desc) ? strlen($desc) : $options['descCutoff'];
+            $desc = substr($desc, 0, strpos($desc, ' ', $cutOff));
+            $desc = str_replace('&amp;nbsp;', '', $desc);
+            $desc .= '...';
+            $date = date('l F d, Y', strtotime($feed[$i]['date']));
+            array_push($items, array(
+                'title' => $title,
+                'link'  => $link,
+                'desc'  => $desc,
+                'date'  => $date,
+            ));
         }
 
         $html = '<div class="rss-aggregator"><ul>';
