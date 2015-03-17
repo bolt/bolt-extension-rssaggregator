@@ -26,8 +26,11 @@ class Extension extends \Bolt\BaseExtension
          * Frontend
          */
         if ($this->app['config']->getWhichEnd() == 'frontend') {
+
             // Add CSS file
-            $this->addCSS("css/rssaggregator.css");
+            if (!empty($this->config['css'])) {
+                $this->addCSS($this->config['css']);
+            }
 
             // Initialize the Twig function
             $this->addTwigFunction('rss_aggregator', 'twigRssAggregator');
@@ -108,21 +111,30 @@ class Extension extends \Bolt\BaseExtension
         // Parse document
         $feed = array();
 
+        // if limit is set higher than the actual amount of items in the feed, adjust limit
+        if (is_int($options['limit'])) {
+            $limit = $options['limit'];
+        } else {
+            $limit = 20;
+        }
+
         foreach ($doc->getElementsByTagName('item') as $node) {
-            $item = array(
+
+            $feed[] = array(
                 'title' => $node->getElementsByTagName('title')->item(0)->nodeValue,
                 'desc' => $node->getElementsByTagName('description')->item(0)->nodeValue,
                 'link' => $node->getElementsByTagName('link')->item(0)->nodeValue,
                 'date' => $node->getElementsByTagName('pubDate')->item(0)->nodeValue,
             );
-            array_push($feed, $item);
+
+            if (count($feed) >= $limit) {
+                break;
+            }
+
         }
 
-        $items = array();
 
-        // if limit is set higher than the actual amount of items in the feed, adjust limit
-        $limit = $options['limit'] > count($feed) ? count($feed) : $options['limit'];
-
+/*
         for ($i = 0; $i < $limit; $i++) {
             $title = htmlentities(strip_tags($feed[$i]['title']), ENT_QUOTES, "UTF-8");
             $link = htmlentities(strip_tags($feed[$i]['link']), ENT_QUOTES, "UTF-8");
@@ -134,28 +146,21 @@ class Extension extends \Bolt\BaseExtension
             $desc .= '...';
             $date = date('l F d, Y', strtotime($feed[$i]['date']));
             array_push($items, array(
-                'title' => $title,
-                'link'  => $link,
-                'desc'  => $desc,
-                'date'  => $date,
+                'title' => $feed[$i]['title'],
+                'link'  => $feed[$i]['link'],
+                'desc'  => $feed[$i]['desc'],
+                'date'  => $feed[$i]['date'],
             ));
-        }
+        } */
 
-        $html = '<div class="rss-aggregator"><ul>';
+        $this->app['twig.loader.filesystem']->addPath(__DIR__ . '/assets/');
 
-        foreach ($items as $item) {
-            $html .= '<li>';
-            $html .= '<a href="' . $item['link'] . '" class="rss-aggregator-title" rel="nofollow">' . $item['title'] . '</a><br />';
-            if ($options['showDesc']) {
-                $html .= '<span class="rss-aggregator-desc">' . $item['desc'] . '</span>';
-            }
-            if ($options['showDate']) {
-                $html .= '<span class="rss-aggregator-date">' . $item['date'] . '</span>';
-            }
-            $html .= '</li>';
-        }
-
-        $html .= '</ul></div>';
+        $html = $this->app['render']->render('rssaggregator.twig', array(
+                'items' => $feed,
+                'options' => $options,
+                'config' => $this->config
+            )
+        );
 
         // create or refresh cache file
         file_put_contents($cachefile, $html);
