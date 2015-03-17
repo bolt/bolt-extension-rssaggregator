@@ -30,7 +30,7 @@ If you get the error 'External feed could not be loaded!'-error, check the follo
 Customization
 =============
 
-Override the CSS styles defined in `extensions/vendor/bolt/rssaaggregator/css/rssaggregator.css`
+Override the CSS styles defined in `extensions/vendor/bolt/rssaggregator/css/rssaggregator.css`
 in your own stylesheet.
 
 Support
