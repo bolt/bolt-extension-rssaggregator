@@ -1,7 +1,7 @@
 Bolt RSS Aggregator
 ===================
 
-A RSS Aggregator extension for the [Bolt CMS](https://www.bolt.cm). Shows feed items of
+An RSS Aggregator extension for the [Bolt CMS](https://www.bolt.cm). Shows feed items of
 external RSS feeds anywhere on your site.
 
 Instructions
