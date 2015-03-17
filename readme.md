@@ -7,10 +7,8 @@ external RSS feeds anywhere on your site.
 Instructions
 ============
 
- 1. Download the extension and place it into your app/extensions folder as
-    app/extensions/RSSAggregator
- 2. Place the `{{ rss_aggregator() }}` Twig function in your template. It requires at
-    least 1 parameter: the feed URL. Example: `{{ rss_aggregator('http://rss.cnn.com/rss/edition.rss') }}`
+Place the `{{ rss_aggregator() }}` Twig function in your template. It requires at least
+one parameter: the feed URL. Example: `{{ rss_aggregator('http://rss.cnn.com/rss/edition.rss') }}`
 
 You can pass several options to the Twig function:
 `{{ rss_aggregator('http://rss.cnn.com/rss/edition.rss', { 'limit': limit, 'showDesc': true }) }}`
