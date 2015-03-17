@@ -1,0 +1,14 @@
+# Options for RSS aggregation
+
+# Set this to the filename of your CSS file. Set it to `false` to include no
+# CSS, which means you should take care of the styling in your own .css files.
+css: false
+
+title_length: 100
+description_length: 200
+
+# See formatting options at http://php.net/manual/en/function.strftime.php
+date_format: "%a %x"
+
+# whether or not to open links in a new window.
+target_blank: true
