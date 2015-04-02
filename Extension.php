@@ -42,7 +42,6 @@ class Extension extends \Bolt\BaseExtension
      */
     public function twigRssAggregator($url = false, $options = array())
     {
-
         if (!$url) {
             return new \Twig_Markup('External feed could not be loaded! No URL specified.', 'UTF-8');
         }
@@ -119,20 +118,17 @@ class Extension extends \Bolt\BaseExtension
         }
 
         foreach ($doc->getElementsByTagName('item') as $node) {
-
             $feed[] = array(
                 'title' => $node->getElementsByTagName('title')->item(0)->nodeValue,
-                'desc' => $node->getElementsByTagName('description')->item(0)->nodeValue,
-                'link' => $node->getElementsByTagName('link')->item(0)->nodeValue,
-                'date' => $node->getElementsByTagName('pubDate')->item(0)->nodeValue,
+                'desc'  => $node->getElementsByTagName('description')->item(0)->nodeValue,
+                'link'  => $node->getElementsByTagName('link')->item(0)->nodeValue,
+                'date'  => $node->getElementsByTagName('pubDate')->item(0)->nodeValue,
             );
 
             if (count($feed) >= $limit) {
                 break;
             }
-
         }
-
 
 /*
         for ($i = 0; $i < $limit; $i++) {
@@ -156,9 +152,9 @@ class Extension extends \Bolt\BaseExtension
         $this->app['twig.loader.filesystem']->addPath(__DIR__ . '/assets/');
 
         $html = $this->app['render']->render('rssaggregator.twig', array(
-                'items' => $feed,
+                'items'   => $feed,
                 'options' => $options,
-                'config' => $this->config
+                'config'  => $this->config
             )
         );
 
