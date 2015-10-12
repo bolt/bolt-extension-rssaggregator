@@ -3,6 +3,7 @@
 namespace Bolt\Extension\Bolt\RSSAggregator;
 
 use Bolt\BaseExtension;
+use GuzzleHttp\Exception\RequestException;
 
 /**
  * RSS Aggregator Extension for Bolt
@@ -81,6 +82,10 @@ class Extension extends BaseExtension
     protected function getRender($url, array $options)
     {
         $feed = $this->getFeed($url, $options);
+        if ($feed === false) {
+            return new \Twig_Markup('External feed could not be loaded!', 'UTF-8');
+        }
+
         $this->app['twig.loader.filesystem']->addPath(__DIR__ . '/assets/');
         $html = $this->app['render']->render('rssaggregator.twig', array(
             'items'   => $feed,
@@ -105,59 +110,44 @@ class Extension extends BaseExtension
      */
     protected function getFeed($url, array $options)
     {
-        // Make sure we are sending a user agent header with the request
-        $streamOpts = array(
-            'http' => array(
-                'user_agent' => 'libxml',
-            )
-        );
-
-        libxml_set_streams_context(stream_context_create($streamOpts));
-
-        $doc = new \DOMDocument();
-
-        // Load feed and suppress errors to avoid a failing external URL taking down our whole site
-        if (!@$doc->load($url)) {
-            return new \Twig_Markup('External feed could not be loaded!', 'UTF-8');
-        }
-
-        // Parse document
         $feed = array();
 
-        // if limit is set higher than the actual amount of items in the feed, adjust limit
-        if (is_int($options['limit'])) {
-            $limit = $options['limit'];
-        } else {
-            $limit = 20;
+        try {
+            $fetched = $this->app['guzzle.client']->get($url);
+            $xml = $fetched->xml();
+        } catch (RequestException $e) {
+            return false;
         }
 
-        $items = $doc->getElementsByTagName('item');
-        $entries = $doc->getElementsByTagName('entry');
-
-        if (!$items->length === 0) {
-            foreach ($items as $node) {
+        // Get RSS Feeds
+        if ($xml->channel->count() > 0) {
+            foreach ($xml->channel->item as $node) {
                 $feed[] = array(
-                    'title' => $node->getElementsByTagName('title')->item(0)->nodeValue,
-                    'desc'  => $node->getElementsByTagName('description')->item(0)->nodeValue,
-                    'link'  => $node->getElementsByTagName('link')->item(0)->nodeValue,
-                    'date'  => $node->getElementsByTagName('pubDate')->item(0)->nodeValue,
+                    'title' => $node->title,
+                    'desc'  => $node->description,
+                    'link'  => $node->link,
+                    'date'  => $node->pubDate,
                 );
 
-                if (count($feed) >= $limit) {
-                    break;
+                if (count($feed) >= $options['limit']) {
+                    return $feed;
                 }
             }
-        } elseif (!$entries->length === 0) {
-            foreach ($entries as $node) {
+        }
+
+        // Get ATOM Feeds
+        if ($xml->entry->count() > 0) {
+            foreach ($xml->entry as $node) {
+                $link = $node->link->attributes();
                 $feed[] = array(
-                    'title' => $node->getElementsByTagName('title')->item(0)->nodeValue,
-                    'desc'  => $node->getElementsByTagName('content')->item(0)->nodeValue,
-                    'link'  => $node->getElementsByTagName('link')->item(0)->getAttribute('href'),
-                    'date'  => $node->getElementsByTagName('published')->item(0)->nodeValue,
+                    'title' => $node->title,
+                    'desc'  => $node->content,
+                    'link'  => $link['href'],
+                    'date'  => $node->published,
                 );
 
-                if (count($feed) >= $limit) {
-                    break;
+                if (count($feed) >= $options['limit']) {
+                    return $feed;
                 }
             }
         }
