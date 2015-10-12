@@ -58,51 +58,52 @@ class Extension extends BaseExtension
         if (!$url) {
             return new \Twig_Markup('External feed could not be loaded! No URL specified.', 'UTF-8');
         }
-        $options = array_merge($this->getDefaultOptions(), $options);
 
-        // Construct a cache handle from the URL
-        $handle = preg_replace('/[^A-Za-z0-9_-]+/', '', $url);
-        $handle = str_replace('httpwww', '', $handle);
-        $cachedir = $this->app['resources']->getPath('cache') . '/rssaggregator/';
-        $cachefile = $cachedir.'/'.$handle.'.cache';
-
-        // Create cache directory if it does not exist
-        if (!file_exists($cachedir)) {
-            mkdir($cachedir, 0777, true);
+        // Use cached data where applicable
+        $key = 'rssaggregator-' . md5($url);
+        $html = $this->app['cache']->fetch($key);
+        if (!$html) {
+            $options = array_merge($this->getDefaultOptions(), $options);
+            $html = $this->getRender($url, $options);
         }
 
-        // Use cache file if possible
-        if (file_exists($cachefile)) {
-            $now = time();
-            $cachetime = filemtime($cachefile);
-            if ($now - $cachetime < $options['cacheMaxAge'] * 60) {
-                return new \Twig_Markup(file_get_contents($cachefile), 'UTF-8');
-            }
-        }
+        return $html;
+    }
 
-        $feed = $this->getFeed();
-
+    /**
+     * Get a rendered feed.
+     *
+     * @param string $url
+     * @param array  $options
+     *
+     * @return \Twig_Markup
+     */
+    protected function getRender($url, array $options)
+    {
+        $feed = $this->getFeed($url, $options);
         $this->app['twig.loader.filesystem']->addPath(__DIR__ . '/assets/');
-
         $html = $this->app['render']->render('rssaggregator.twig', array(
-                'items'   => $feed,
-                'options' => $options,
-                'config'  => $this->config
-            )
-        );
+            'items'   => $feed,
+            'options' => $options,
+            'config'  => $this->config
+        ));
 
-        // create or refresh cache file
-        file_put_contents($cachefile, $html);
+        $html = new \Twig_Markup($html, 'UTF-8');
+        $key = 'rssaggregator-' . md5($url);
+        $this->app['cache']->save($key, $html, $options['cacheMaxAge'] * 60);
 
-        return new \Twig_Markup($html, 'UTF-8');
+        return $html;
     }
 
     /**
      * Load a remote feed.
      *
+     * @param string $url
+     * @param array  $options
+     *
      * @return array
      */
-    protected function getFeed()
+    protected function getFeed($url, array $options)
     {
         // Make sure we are sending a user agent header with the request
         $streamOpts = array(
@@ -124,8 +125,8 @@ class Extension extends BaseExtension
         $feed = array();
 
         // if limit is set higher than the actual amount of items in the feed, adjust limit
-        if (is_int($this->config['limit'])) {
-            $limit = $this->config['limit'];
+        if (is_int($options['limit'])) {
+            $limit = $options['limit'];
         } else {
             $limit = 20;
         }
