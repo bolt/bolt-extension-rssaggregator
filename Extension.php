@@ -119,33 +119,33 @@ class Extension extends \Bolt\BaseExtension
 
         $items = $doc->getElementsByTagName('item');
         $entries = $doc->getElementsByTagName('entry');
-        
-        if (! $items->length==0) {
-	        foreach ($items as $node) {
-	            $feed[] = array(
-	                'title' => $node->getElementsByTagName('title')->item(0)->nodeValue,
-	                'desc'  => $node->getElementsByTagName('description')->item(0)->nodeValue,
-	                'link'  => $node->getElementsByTagName('link')->item(0)->nodeValue,
-	                'date'  => $node->getElementsByTagName('pubDate')->item(0)->nodeValue,
-	            );
-	
-	            if (count($feed) >= $limit) {
-	                break;
-	            }
-	        }
-        } elseif (! $entries->length==0) {
-	        foreach ($entries as $node) {
-	        	$feed[] = array(
-	        			'title' => $node->getElementsByTagName('title')->item(0)->nodeValue,
-	        			'desc'  => $node->getElementsByTagName('content')->item(0)->nodeValue,
-	        			'link'  => $node->getElementsByTagName('link')->item(0)->getAttribute('href'),
-	        			'date'  => $node->getElementsByTagName('published')->item(0)->nodeValue,
-	        	);
-	        
-	        	if (count($feed) >= $limit) {
-	        		break;
-	        	}
-	        }
+
+        if (!$items->length === 0) {
+            foreach ($items as $node) {
+                $feed[] = array(
+                    'title' => $node->getElementsByTagName('title')->item(0)->nodeValue,
+                    'desc'  => $node->getElementsByTagName('description')->item(0)->nodeValue,
+                    'link'  => $node->getElementsByTagName('link')->item(0)->nodeValue,
+                    'date'  => $node->getElementsByTagName('pubDate')->item(0)->nodeValue,
+                );
+
+                if (count($feed) >= $limit) {
+                    break;
+                }
+            }
+        } elseif (!$entries->length === 0) {
+            foreach ($entries as $node) {
+                $feed[] = array(
+                        'title' => $node->getElementsByTagName('title')->item(0)->nodeValue,
+                        'desc'  => $node->getElementsByTagName('content')->item(0)->nodeValue,
+                        'link'  => $node->getElementsByTagName('link')->item(0)->getAttribute('href'),
+                        'date'  => $node->getElementsByTagName('published')->item(0)->nodeValue,
+                );
+
+                if (count($feed) >= $limit) {
+                    break;
+                }
+            }
         }
 
 /*
