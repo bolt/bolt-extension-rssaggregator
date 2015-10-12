@@ -53,42 +53,18 @@ class Extension extends BaseExtension
      *
      * @return \Twig_Markup
      */
-    public function twigRssAggregator($url = false, $options = array())
+    public function twigRssAggregator($url = false, array $options = array())
     {
         if (!$url) {
             return new \Twig_Markup('External feed could not be loaded! No URL specified.', 'UTF-8');
         }
+        $options = array_merge($this->getDefaultOptions(), $options);
 
         // Construct a cache handle from the URL
         $handle = preg_replace('/[^A-Za-z0-9_-]+/', '', $url);
         $handle = str_replace('httpwww', '', $handle);
         $cachedir = $this->app['resources']->getPath('cache') . '/rssaggregator/';
         $cachefile = $cachedir.'/'.$handle.'.cache';
-
-        // default options
-        $defaultLimit = 5;
-        $defaultShowDesc = false;
-        $defaultShowDate = false;
-        $defaultDescCutoff = 100;
-        $defaultCacheMaxAge = 15;
-
-        // Handle options parameter
-
-        if (!array_key_exists('limit', $options)) {
-            $options['limit'] = $defaultLimit;
-        }
-        if (!array_key_exists('showDesc', $options)) {
-            $options['showDesc'] = $defaultShowDesc;
-        }
-        if (!array_key_exists('showDate', $options)) {
-            $options['showDate'] = $defaultShowDate;
-        }
-        if (!array_key_exists('descCutoff', $options)) {
-            $options['descCutoff'] = $defaultDescCutoff;
-        }
-        if (!array_key_exists('cacheMaxAge', $options)) {
-            $options['cacheMaxAge'] = $defaultCacheMaxAge;
-        }
 
         // Create cache directory if it does not exist
         if (!file_exists($cachedir)) {
@@ -193,5 +169,35 @@ class Extension extends BaseExtension
         file_put_contents($cachefile, $html);
 
         return new \Twig_Markup($html, 'UTF-8');
+    }
+
+    /**
+     * Get the default options values.
+     *
+     * @return array
+     */
+    protected function getDefaultOptions()
+    {
+        return array(
+            'limit'              => 5,
+            'showDesc'           => false,
+            'showDate'           => false,
+            'descCutoff'         => 100,
+            'cacheMaxAge'        => 15,
+        );
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function getDefaultConfig()
+    {
+        return array(
+            'css'                => false,
+            'title_length'       => 100,
+            'description_length' => 200,
+            'date_format'        => '%a %x',
+            'target_blank'       => true
+        );
     }
 }
