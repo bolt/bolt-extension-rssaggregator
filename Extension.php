@@ -80,6 +80,30 @@ class Extension extends BaseExtension
             }
         }
 
+        $feed = $this->getFeed();
+
+        $this->app['twig.loader.filesystem']->addPath(__DIR__ . '/assets/');
+
+        $html = $this->app['render']->render('rssaggregator.twig', array(
+                'items'   => $feed,
+                'options' => $options,
+                'config'  => $this->config
+            )
+        );
+
+        // create or refresh cache file
+        file_put_contents($cachefile, $html);
+
+        return new \Twig_Markup($html, 'UTF-8');
+    }
+
+    /**
+     * Load a remote feed.
+     *
+     * @return array
+     */
+    protected function getFeed()
+    {
         // Make sure we are sending a user agent header with the request
         $streamOpts = array(
             'http' => array(
@@ -100,8 +124,8 @@ class Extension extends BaseExtension
         $feed = array();
 
         // if limit is set higher than the actual amount of items in the feed, adjust limit
-        if (is_int($options['limit'])) {
-            $limit = $options['limit'];
+        if (is_int($this->config['limit'])) {
+            $limit = $this->config['limit'];
         } else {
             $limit = 20;
         }
@@ -125,10 +149,10 @@ class Extension extends BaseExtension
         } elseif (!$entries->length === 0) {
             foreach ($entries as $node) {
                 $feed[] = array(
-                        'title' => $node->getElementsByTagName('title')->item(0)->nodeValue,
-                        'desc'  => $node->getElementsByTagName('content')->item(0)->nodeValue,
-                        'link'  => $node->getElementsByTagName('link')->item(0)->getAttribute('href'),
-                        'date'  => $node->getElementsByTagName('published')->item(0)->nodeValue,
+                    'title' => $node->getElementsByTagName('title')->item(0)->nodeValue,
+                    'desc'  => $node->getElementsByTagName('content')->item(0)->nodeValue,
+                    'link'  => $node->getElementsByTagName('link')->item(0)->getAttribute('href'),
+                    'date'  => $node->getElementsByTagName('published')->item(0)->nodeValue,
                 );
 
                 if (count($feed) >= $limit) {
@@ -137,38 +161,7 @@ class Extension extends BaseExtension
             }
         }
 
-/*
-        for ($i = 0; $i < $limit; $i++) {
-            $title = htmlentities(strip_tags($feed[$i]['title']), ENT_QUOTES, "UTF-8");
-            $link = htmlentities(strip_tags($feed[$i]['link']), ENT_QUOTES, "UTF-8");
-            $desc = htmlentities(strip_tags($feed[$i]['desc']), ENT_QUOTES, "UTF-8");
-            // if cutOff is set higher than the actual length of the description, adjust it
-            $cutOff = $options['descCutoff'] > strlen($desc) ? strlen($desc) : $options['descCutoff'];
-            $desc = substr($desc, 0, strpos($desc, ' ', $cutOff));
-            $desc = str_replace('&amp;nbsp;', '', $desc);
-            $desc .= '...';
-            $date = date('l F d, Y', strtotime($feed[$i]['date']));
-            array_push($items, array(
-                'title' => $feed[$i]['title'],
-                'link'  => $feed[$i]['link'],
-                'desc'  => $feed[$i]['desc'],
-                'date'  => $feed[$i]['date'],
-            ));
-        } */
-
-        $this->app['twig.loader.filesystem']->addPath(__DIR__ . '/assets/');
-
-        $html = $this->app['render']->render('rssaggregator.twig', array(
-                'items'   => $feed,
-                'options' => $options,
-                'config'  => $this->config
-            )
-        );
-
-        // create or refresh cache file
-        file_put_contents($cachefile, $html);
-
-        return new \Twig_Markup($html, 'UTF-8');
+        return $feed;
     }
 
     /**
