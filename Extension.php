@@ -2,13 +2,15 @@
 
 namespace Bolt\Extension\Bolt\RSSAggregator;
 
+use Bolt\BaseExtension;
+
 /**
  * RSS Aggregator Extension for Bolt
  *
  * @author Sebastian Klier <sebastian@sebastianklier.com>
  * @author Gawain Lynch <gawain.lynch@gmail.com>
  */
-class Extension extends \Bolt\BaseExtension
+class Extension extends BaseExtension
 {
     const NAME = 'RSSAggregator';
 
@@ -45,6 +47,11 @@ class Extension extends \Bolt\BaseExtension
 
     /**
      * Twig function {{ rss_aggregator() }} in RSS Aggregator extension.
+     *
+     * @param string $url
+     * @param array  $options
+     *
+     * @return \Twig_Markup
      */
     public function twigRssAggregator($url = false, $options = array())
     {
