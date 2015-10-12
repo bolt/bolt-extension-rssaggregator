@@ -22,18 +22,24 @@ class Extension extends \Bolt\BaseExtension
      */
     public function initialize()
     {
-        /*
-         * Frontend
-         */
-        if ($this->app['config']->getWhichEnd() == 'frontend') {
+        $this->app->before([$this, 'before']);
 
-            // Add CSS file
-            if (!empty($this->config['css'])) {
-                $this->addCSS($this->config['css']);
-            }
+        // Initialize the Twig function
+        $this->addTwigFunction('rss_aggregator', 'twigRssAggregator');
+    }
 
-            // Initialize the Twig function
-            $this->addTwigFunction('rss_aggregator', 'twigRssAggregator');
+    /**
+     * Before middleware
+     */
+    public function before()
+    {
+        if ($this->app['config']->getWhichEnd() !== 'frontend') {
+            return;
+        }
+
+        // Add CSS file
+        if (!empty($this->config['css'])) {
+            $this->addCSS($this->config['css']);
         }
     }
 
