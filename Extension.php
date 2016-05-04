@@ -2,13 +2,16 @@
 
 namespace Bolt\Extension\Bolt\RSSAggregator;
 
+use Bolt\BaseExtension;
+use GuzzleHttp\Exception\RequestException;
+
 /**
  * RSS Aggregator Extension for Bolt
  *
  * @author Sebastian Klier <sebastian@sebastianklier.com>
  * @author Gawain Lynch <gawain.lynch@gmail.com>
  */
-class Extension extends \Bolt\BaseExtension
+class Extension extends BaseExtension
 {
     const NAME = 'RSSAggregator';
 
@@ -22,145 +25,163 @@ class Extension extends \Bolt\BaseExtension
      */
     public function initialize()
     {
-        /*
-         * Frontend
-         */
-        if ($this->app['config']->getWhichEnd() == 'frontend') {
+        $this->app->before([$this, 'before']);
 
-            // Add CSS file
-            if (!empty($this->config['css'])) {
-                $this->addCSS($this->config['css']);
-            }
+        // Initialize the Twig function
+        $this->addTwigFunction('rss_aggregator', 'twigRssAggregator');
+    }
 
-            // Initialize the Twig function
-            $this->addTwigFunction('rss_aggregator', 'twigRssAggregator');
+    /**
+     * Before middleware
+     */
+    public function before()
+    {
+        if ($this->app['config']->getWhichEnd() !== 'frontend') {
+            return;
+        }
+
+        // Add CSS file
+        if (!empty($this->config['css'])) {
+            $this->addCSS($this->config['css']);
         }
     }
 
     /**
      * Twig function {{ rss_aggregator() }} in RSS Aggregator extension.
+     *
+     * @param string $url
+     * @param array  $options
+     *
+     * @return \Twig_Markup
      */
-    public function twigRssAggregator($url = false, $options = array())
+    public function twigRssAggregator($url = false, array $options = array())
     {
         if (!$url) {
             return new \Twig_Markup('External feed could not be loaded! No URL specified.', 'UTF-8');
         }
 
-        // Construct a cache handle from the URL
-        $handle = preg_replace('/[^A-Za-z0-9_-]+/', '', $url);
-        $handle = str_replace('httpwww', '', $handle);
-        $cachedir = $this->app['resources']->getPath('cache') . '/rssaggregator/';
-        $cachefile = $cachedir.'/'.$handle.'.cache';
-
-        // default options
-        $defaultLimit = 5;
-        $defaultShowDesc = false;
-        $defaultShowDate = false;
-        $defaultDescCutoff = 100;
-        $defaultCacheMaxAge = 15;
-
-        // Handle options parameter
-
-        if (!array_key_exists('limit', $options)) {
-            $options['limit'] = $defaultLimit;
-        }
-        if (!array_key_exists('showDesc', $options)) {
-            $options['showDesc'] = $defaultShowDesc;
-        }
-        if (!array_key_exists('showDate', $options)) {
-            $options['showDate'] = $defaultShowDate;
-        }
-        if (!array_key_exists('descCutoff', $options)) {
-            $options['descCutoff'] = $defaultDescCutoff;
-        }
-        if (!array_key_exists('cacheMaxAge', $options)) {
-            $options['cacheMaxAge'] = $defaultCacheMaxAge;
+        // Use cached data where applicable
+        $key = 'rssaggregator-' . md5($url);
+        $html = $this->app['cache']->fetch($key);
+        if (!$html) {
+            $options = array_merge($this->getDefaultOptions(), $options);
+            $html = $this->getRender($url, $options);
         }
 
-        // Create cache directory if it does not exist
-        if (!file_exists($cachedir)) {
-            mkdir($cachedir, 0777, true);
-        }
+        return $html;
+    }
 
-        // Use cache file if possible
-        if (file_exists($cachefile)) {
-            $now = time();
-            $cachetime = filemtime($cachefile);
-            if ($now - $cachetime < $options['cacheMaxAge'] * 60) {
-                return new \Twig_Markup(file_get_contents($cachefile), 'UTF-8');
-            }
-        }
-
-        // Make sure we are sending a user agent header with the request
-        $streamOpts = array(
-            'http' => array(
-                'user_agent' => 'libxml',
-            )
-        );
-
-        libxml_set_streams_context(stream_context_create($streamOpts));
-
-        $doc = new \DOMDocument();
-
-        // Load feed and suppress errors to avoid a failing external URL taking down our whole site
-        if (!@$doc->load($url)) {
+    /**
+     * Get a rendered feed.
+     *
+     * @param string $url
+     * @param array  $options
+     *
+     * @return \Twig_Markup
+     */
+    protected function getRender($url, array $options)
+    {
+        $feed = $this->getFeed($url, $options);
+        if ($feed === false) {
             return new \Twig_Markup('External feed could not be loaded!', 'UTF-8');
         }
 
-        // Parse document
+        $this->app['twig.loader.filesystem']->addPath(__DIR__ . '/assets/');
+        $html = $this->app['render']->render('rssaggregator.twig', array(
+            'items'   => $feed,
+            'options' => $options,
+            'config'  => $this->config
+        ));
+
+        $html = new \Twig_Markup($html, 'UTF-8');
+        $key = 'rssaggregator-' . md5($url);
+        $this->app['cache']->save($key, $html, $options['cacheMaxAge'] * 60);
+
+        return $html;
+    }
+
+    /**
+     * Load a remote feed.
+     *
+     * @param string $url
+     * @param array  $options
+     *
+     * @return array
+     */
+    protected function getFeed($url, array $options)
+    {
         $feed = array();
 
-        // if limit is set higher than the actual amount of items in the feed, adjust limit
-        if (is_int($options['limit'])) {
-            $limit = $options['limit'];
-        } else {
-            $limit = 20;
+        try {
+            $fetched = $this->app['guzzle.client']->get($url);
+            $xml = $fetched->xml();
+        } catch (RequestException $e) {
+            return false;
         }
 
-        foreach ($doc->getElementsByTagName('item') as $node) {
-            $feed[] = array(
-                'title' => $node->getElementsByTagName('title')->item(0)->nodeValue,
-                'desc'  => $node->getElementsByTagName('description')->item(0)->nodeValue,
-                'link'  => $node->getElementsByTagName('link')->item(0)->nodeValue,
-                'date'  => $node->getElementsByTagName('pubDate')->item(0)->nodeValue,
-            );
+        // Get RSS Feeds
+        if ($xml->channel->count() > 0) {
+            foreach ($xml->channel->item as $node) {
+                $feed[] = array(
+                    'title' => $node->title,
+                    'desc'  => $node->description,
+                    'link'  => $node->link,
+                    'date'  => $node->pubDate,
+                );
 
-            if (count($feed) >= $limit) {
-                break;
+                if (count($feed) >= $options['limit']) {
+                    return $feed;
+                }
             }
         }
 
-/*
-        for ($i = 0; $i < $limit; $i++) {
-            $title = htmlentities(strip_tags($feed[$i]['title']), ENT_QUOTES, "UTF-8");
-            $link = htmlentities(strip_tags($feed[$i]['link']), ENT_QUOTES, "UTF-8");
-            $desc = htmlentities(strip_tags($feed[$i]['desc']), ENT_QUOTES, "UTF-8");
-            // if cutOff is set higher than the actual length of the description, adjust it
-            $cutOff = $options['descCutoff'] > strlen($desc) ? strlen($desc) : $options['descCutoff'];
-            $desc = substr($desc, 0, strpos($desc, ' ', $cutOff));
-            $desc = str_replace('&amp;nbsp;', '', $desc);
-            $desc .= '...';
-            $date = date('l F d, Y', strtotime($feed[$i]['date']));
-            array_push($items, array(
-                'title' => $feed[$i]['title'],
-                'link'  => $feed[$i]['link'],
-                'desc'  => $feed[$i]['desc'],
-                'date'  => $feed[$i]['date'],
-            ));
-        } */
+        // Get ATOM Feeds
+        if ($xml->entry->count() > 0) {
+            foreach ($xml->entry as $node) {
+                $link = $node->link->attributes();
+                $feed[] = array(
+                    'title' => $node->title,
+                    'desc'  => $node->content,
+                    'link'  => $link['href'],
+                    'date'  => $node->published,
+                );
 
-        $this->app['twig.loader.filesystem']->addPath(__DIR__ . '/assets/');
+                if (count($feed) >= $options['limit']) {
+                    return $feed;
+                }
+            }
+        }
 
-        $html = $this->app['render']->render('rssaggregator.twig', array(
-                'items'   => $feed,
-                'options' => $options,
-                'config'  => $this->config
-            )
+        return $feed;
+    }
+
+    /**
+     * Get the default options values.
+     *
+     * @return array
+     */
+    protected function getDefaultOptions()
+    {
+        return array(
+            'limit'              => 5,
+            'showDesc'           => false,
+            'showDate'           => false,
+            'descCutoff'         => 100,
+            'cacheMaxAge'        => 15,
         );
+    }
 
-        // create or refresh cache file
-        file_put_contents($cachefile, $html);
-
-        return new \Twig_Markup($html, 'UTF-8');
+    /**
+     * {@inheritdoc}
+     */
+    protected function getDefaultConfig()
+    {
+        return array(
+            'css'                => false,
+            'title_length'       => 100,
+            'description_length' => 200,
+            'date_format'        => '%a %x',
+            'target_blank'       => true
+        );
     }
 }
