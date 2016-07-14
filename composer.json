@@ -24,5 +24,11 @@
 		"psr-4" : {
 			"Bolt\\Extension\\Bolt\\RSSAggregator\\" : ""
 		}
-	}
+	},
+    "extra": {
+        "bolt-icon": "icon.png",
+        "branch-alias": {
+            "dev-master": "2.0.x-dev"
+        }
+    }
 }
