@@ -1,34 +1,38 @@
 {
-	"name" : "bolt/rssaggregator",
-	"description" : "RSS aggregator extension for Bolt",
-	"type" : "bolt-extension",
-	"keywords" : [
-		"RSS"
-	],
-	"require" : {
-		"bolt/bolt" : ">=2.0.0,<3.0.0"
-	},
-	"license" : "GPL-3.0+",
-	"authors" : [{
-			"name" : "Sebastian Klier",
-			"email" : "sebastian@sebastianklier.com"
-		}, {
-			"name" : "Gawain Lynch",
-			"email" : "gawain.lynch@gmail.com"
-		}
-	],
-	"autoload" : {
-		"files" : [
-			"init.php"
-		],
-		"psr-4" : {
-			"Bolt\\Extension\\Bolt\\RSSAggregator\\" : ""
-		}
-	},
-    "extra": {
-        "bolt-icon": "icon.png",
-        "branch-alias": {
-            "dev-master": "2.0.x-dev"
-        }
+  "name": "bolt/rssaggregator",
+  "description": "RSS aggregator extension for Bolt",
+  "type": "bolt-extension",
+  "keywords": [
+    "RSS"
+  ],
+  "require": {
+    "bolt/bolt": "^3.0"
+  },
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Sebastian Klier",
+      "email": "sebastian@sebastianklier.com"
+    },
+    {
+      "name": "Gawain Lynch",
+      "email": "gawain.lynch@gmail.com"
+    },
+    {
+      "name": "Rix Beck",
+      "email": "rix@boltcms.hu"
     }
+  ],
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "autoload": {
+    "psr-4": {
+      "Bolt\\Extension\\Bolt\\RSSAggregator\\": "src"
+    }
+  },
+  "extra": {
+    "bolt-assets": "assets",
+    "bolt-class": "Bolt\\Extension\\Bolt\\RSSAggregator\\RSSAggregatorExtension",
+    "bolt-icon": "icon.png"
+  }
 }
