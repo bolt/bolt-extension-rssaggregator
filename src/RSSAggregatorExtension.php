@@ -4,6 +4,7 @@ namespace Bolt\Extension\Bolt\RSSAggregator;
 
 use Bolt\Extension\SimpleExtension;
 use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Psr7\Response;
 
 /**
  * RSS Aggregator Extension for Bolt
@@ -13,6 +14,11 @@ use GuzzleHttp\Exception\RequestException;
  */
 class RSSAggregatorExtension extends SimpleExtension
 {
+    public function __construct()
+    {
+        $a = 1;
+    }
+
     /**
      * Twig function {{ rss_aggregator() }} in RSS Aggregator extension.
      *
@@ -53,7 +59,6 @@ class RSSAggregatorExtension extends SimpleExtension
     protected function registerTwigFunctions()
     {
         $options = ['is_safe' => ['html'], 'safe' => true];
-        $this->getConfig();
 
         return [
             'rss_aggregator' => ['twigRssAggregator', $options],
@@ -92,15 +97,15 @@ class RSSAggregatorExtension extends SimpleExtension
             return new \Twig_Markup('External feed could not be loaded!', 'UTF-8');
         }
 
-        $app['twig.loader.filesystem']->addPath(__DIR__.'/assets/');
-
+/*        $app['twig.loader.filesystem']->addPath(__DIR__.'/assets/');
+*/
         $context = [
             'items' => $feed,
             'options' => $options,
-            'config' => $this->getConfig(),
+            'config' => $config = $this->getConfig(),
         ];
 
-        $html = $this->renderTemplate('rssaggregator.twig', $context);
+        $html = $this->renderTemplate($config['template'], $context);
 
         $html = new \Twig_Markup($html, 'UTF-8');
         $key = 'rssaggregator-'.md5($url);
@@ -123,8 +128,10 @@ class RSSAggregatorExtension extends SimpleExtension
 
         try {
             $app = $this->getContainer();
+            /** @var Response $fetched */
             $fetched = $app['guzzle.client']->get($url);
-            $xml = $fetched->xml();
+            $raw = (string) $fetched->getBody();
+            $xml = new \SimpleXMLElement($raw);
         } catch (RequestException $e) {
             return false;
         }
