@@ -1,5 +1,5 @@
 {
-  "name": "rixbeck/rssaggregator",
+  "name": "bolt/rssaggregator",
   "description": "RSS aggregator extension for Bolt",
   "type": "bolt-extension",
   "keywords": [
@@ -8,7 +8,7 @@
   "require": {
     "bolt/bolt": "^3.0"
   },
-  "license": "GPL-3.0+",
+  "license": "MIT",
   "authors": [
     {
       "name": "Sebastian Klier",
@@ -31,9 +31,8 @@
     }
   },
   "extra": {
-    "bolt-icon": "icon.png",
-    "branch-alias": {
-      "dev-master": "feature/bolt3_comp"
-    }
+    "bolt-assets": "assets",
+    "bolt-class": "Bolt\\Extension\\Bolt\\RSSAggregator\\RSSAggregatorExtension",
+    "bolt-icon": "icon.png"
   }
 }
