@@ -1,5 +1,5 @@
 {
-  "name": "bolt/rssaggregator",
+  "name": "rixbeck/rssaggregator",
   "description": "RSS aggregator extension for Bolt",
   "type": "bolt-extension",
   "keywords": [
@@ -33,7 +33,7 @@
   "extra": {
     "bolt-icon": "icon.png",
     "branch-alias": {
-      "dev-master": "2.0.x-dev"
+      "dev-master": "feature/bolt3_comp"
     }
   }
 }
