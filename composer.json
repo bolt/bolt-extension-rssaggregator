@@ -31,6 +31,8 @@
     }
   },
   "extra": {
+    "bolt-assets": "assets",
+    "bolt-class": "Bolt\\Extension\\Bolt\\RSSAggregator\\RSSAggregatorExtension",
     "bolt-icon": "icon.png"
   }
 }
