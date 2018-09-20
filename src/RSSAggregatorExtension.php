@@ -36,13 +36,15 @@ class RSSAggregatorExtension extends SimpleExtension
         // Use cached data where applicable
         $app = $this->getContainer();
         $key = 'rssaggregator-'.md5($url);
-        $html = $app['cache']->fetch($key);
-        if (!$html) {
-            $options = array_merge($this->getDefaultOptions(), $options);
-            $html = $this->getRender($url, $options);
+        $options = array_merge($this->getDefaultOptions(), $options);
+
+        if ($options['cacheMaxAge'] > 0) {
+            $html = $app['cache']->fetch($key);
+
+            return $html;
         }
 
-        return $html;
+        return $this->getRender($url, $options);
     }
 
     /**
@@ -97,8 +99,8 @@ class RSSAggregatorExtension extends SimpleExtension
             return new \Twig_Markup('External feed could not be loaded!', 'UTF-8');
         }
 
-/*        $app['twig.loader.filesystem']->addPath(__DIR__.'/assets/');
-*/
+        /*        $app['twig.loader.filesystem']->addPath(__DIR__.'/assets/');
+        */
         $context = [
             'items' => $feed,
             'options' => $options,
@@ -144,6 +146,7 @@ class RSSAggregatorExtension extends SimpleExtension
                     'desc' => $node->description,
                     'link' => $node->link,
                     'date' => $node->pubDate,
+                    'node' => $node,
                 );
 
                 if (count($feed) >= $options['limit']) {
@@ -161,6 +164,7 @@ class RSSAggregatorExtension extends SimpleExtension
                     'desc' => $node->content,
                     'link' => $link['href'],
                     'date' => $node->published,
+                    'node' => $node,
                 );
 
                 if (count($feed) >= $options['limit']) {
