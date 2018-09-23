@@ -1,0 +1,21 @@
+<div class="rss-aggregator"><ul>
+{% for item in items %}
+    <li>
+        <span>
+            <a href="{{ item.link }}" class="rss-aggregator-title" rel="nofollow" {% if config.target_blank %}target="_blank"{% endif %}>
+            {{ item.title|excerpt(config.title_length|default(50)) }}
+            </a>
+        </span>
+        {% if options.showDesc %}
+            <span class="rss-aggregator-desc">
+                {{ item.desc|excerpt(options.descCutoff|default(config.description_length|default(50))) }}
+            </span>
+        {% endif %}
+        {% if options.showDate %}
+            <span class="rss-aggregator-desc">
+                {{ item.date|localdate(config.date_format|default('%a %x')) }}
+            </span>
+        {% endif %}
+    </li>
+{% endfor %}
+</ul></div>
