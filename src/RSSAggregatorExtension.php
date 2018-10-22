@@ -40,11 +40,9 @@ class RSSAggregatorExtension extends SimpleExtension
 
         if ($options['cacheMaxAge'] > 0) {
             $html = $app['cache']->fetch($key);
-
-            return $html;
         }
 
-        return $this->getRender($url, $options);
+        return $html ? $html : $this->getRender($url, $options);
     }
 
     /**
